@@ -249,24 +249,30 @@ def walk_swing_foot_clearance(
   feet_cfg: SceneEntityCfg,
   contact_height: float,
   target_clearance: float,
-  minimum_air_time: float = 0.04,
+  minimum_air_time: float = 0.16,
+  maximum_air_time: float = 0.36,
   minimum_support_time: float = 0.04,
   command_name: str = "twist",
   minimum_command: float = 0.1,
   maximum_forward_speed: float = 0.8,
   include_turning: bool = True,
 ) -> torch.Tensor:
-  """Reward swing feet for reaching a minimum flat-ground clearance."""
+  """Penalize supported swing feet that remain below the target clearance."""
   if target_clearance <= 0.0:
     raise ValueError("target_clearance must be positive.")
+  if maximum_air_time <= minimum_air_time:
+    raise ValueError("maximum_air_time must exceed minimum_air_time.")
   asset: Entity = env.scene[feet_cfg.name]
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.current_air_time is not None
   assert sensor.data.current_contact_time is not None
   foot_height = asset.data.body_link_pos_w[:, feet_cfg.body_ids, 2]
   clearance = foot_height - contact_height
-  clearance_progress = torch.clamp(clearance / target_clearance, 0.0, 1.0)
-  swing = sensor.data.current_air_time > minimum_air_time
+  clearance_deficit = torch.relu(target_clearance - clearance) / target_clearance
+  clearance_deficit = torch.clamp(clearance_deficit, max=1.0)
+  swing = (sensor.data.current_air_time > minimum_air_time) & (
+    sensor.data.current_air_time < maximum_air_time
+  )
   support = torch.flip(sensor.data.current_contact_time, dims=(1,))
   supported_swing = swing & (support > minimum_support_time)
   gait_mask = _walk_style_mask(
@@ -277,7 +283,7 @@ def walk_swing_foot_clearance(
     include_turning,
   )
   return (
-    torch.mean(clearance_progress * supported_swing.float(), dim=1)
+    torch.mean(torch.square(clearance_deficit) * supported_swing.float(), dim=1)
     * gait_mask.float()
   )
 
@@ -293,17 +299,18 @@ def walk_air_time_tracking(
   maximum_forward_speed: float = 0.8,
   include_turning: bool = True,
 ) -> torch.Tensor:
-  """Reward walk-style feet that land near the expert swing duration."""
+  """Penalize walk-style landings outside the expert swing duration."""
   if std <= 0.0:
     raise ValueError("std must be positive.")
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.last_air_time is not None
   assert sensor.data.current_contact_time is not None
   first_contact = sensor.compute_first_contact(env.step_dt)
-  error = (sensor.data.last_air_time - target_air_time) / std
+  error = torch.abs(sensor.data.last_air_time - target_air_time) / std
+  error = torch.clamp(error, max=1.0)
   support = torch.flip(sensor.data.current_contact_time, dims=(1,))
   supported_landing = first_contact & (support > minimum_support_time)
-  landing_reward = torch.exp(-torch.square(error)) * supported_landing.float()
+  landing_error = torch.square(error) * supported_landing.float()
   gait_mask = _walk_style_mask(
     env,
     command_name,
@@ -311,7 +318,7 @@ def walk_air_time_tracking(
     maximum_forward_speed,
     include_turning,
   )
-  return torch.sum(landing_reward, dim=1) * gait_mask.float()
+  return torch.sum(landing_error, dim=1) * gait_mask.float()
 
 
 def touchdown_foot_velocity(
@@ -325,14 +332,14 @@ def touchdown_foot_velocity(
   maximum_forward_speed: float = 0.8,
   include_turning: bool = True,
 ) -> torch.Tensor:
-  """Penalize excessive 3D foot speed only at the first contact step."""
+  """Penalize excessive horizontal foot speed at the first contact step."""
   if maximum_velocity <= velocity_deadband:
     raise ValueError("maximum_velocity must exceed velocity_deadband.")
   asset: Entity = env.scene[feet_cfg.name]
   sensor: ContactSensor = env.scene[sensor_name]
   first_contact = sensor.compute_first_contact(env.step_dt)
   speed = torch.linalg.vector_norm(
-    asset.data.body_link_lin_vel_w[:, feet_cfg.body_ids, :], dim=-1
+    asset.data.body_link_lin_vel_w[:, feet_cfg.body_ids, :2], dim=-1
   )
   excess = torch.relu(speed - velocity_deadband)
   excess = torch.clamp(excess, max=maximum_velocity - velocity_deadband)

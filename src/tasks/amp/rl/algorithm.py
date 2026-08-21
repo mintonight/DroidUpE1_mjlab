@@ -12,7 +12,11 @@ from src.tasks.amp.constants import (
   AMP_LABEL_NAMES,
   AMP_OBS_DIM,
 )
-from src.tasks.amp.mdp.commands import COMMAND_MODE_LATERAL, COMMAND_MODE_TURNING
+from src.tasks.amp.mdp.commands import (
+  COMMAND_MODE_LATERAL,
+  COMMAND_MODE_STANDING,
+  COMMAND_MODE_TURNING,
+)
 
 from .discriminator import Discriminator
 from .motion_loader import MotionLoader
@@ -34,10 +38,10 @@ class AmpPPO(PPO):
     amp_gradient_penalty: float = 10.0,
     amp_motion_velocity_threshold: float = 0.8,
     amp_motion_weights: tuple[float, ...] = (
-      1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5
+      1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0
     ),
     amp_motion_labels: tuple[str, ...] = (
-      "walk", "run", "run", "turn", "turn", "side", "side"
+      "walk", "run", "run", "turn", "turn", "side", "side", "stand"
     ),
     minimum_action_std: tuple[float, ...] | None = None,
     **kwargs,
@@ -100,19 +104,30 @@ class AmpPPO(PPO):
     return self.amp_data
 
   def _command_motion_label(self, command: torch.Tensor) -> torch.Tensor:
-    """Map command modes to a four-class one-hot AMP label."""
+    """Map command modes to a five-class one-hot AMP label."""
     term = self._env.unwrapped.command_manager.get_term("twist")
     command_mode = getattr(term, "command_mode", None)
     if command_mode is None:
       raise RuntimeError("AMP requires UniformVelocityCommand.command_mode.")
+    label_ids = (command[:, 0] > self.amp_motion_velocity_threshold).to(torch.long)
     label_ids = torch.where(
       command_mode == COMMAND_MODE_TURNING,
-      torch.full_like(command_mode, 2),
-      torch.where(
-        command_mode == COMMAND_MODE_LATERAL,
-        torch.full_like(command_mode, 3),
-        (command[:, 0] > self.amp_motion_velocity_threshold).to(torch.long),
-      ),
+      torch.full_like(command_mode, AMP_LABEL_NAMES.index("turn")),
+      label_ids,
+    )
+    label_ids = torch.where(
+      command_mode == COMMAND_MODE_LATERAL,
+      torch.full_like(command_mode, AMP_LABEL_NAMES.index("side")),
+      label_ids,
+    )
+    command_magnitude = torch.linalg.vector_norm(command[:, :2], dim=1) + torch.abs(
+      command[:, 2]
+    )
+    standing = (command_mode == COMMAND_MODE_STANDING) | (command_magnitude <= 0.1)
+    label_ids = torch.where(
+      standing,
+      torch.full_like(command_mode, AMP_LABEL_NAMES.index("stand")),
+      label_ids,
     )
     return torch.nn.functional.one_hot(
       label_ids, num_classes=AMP_LABEL_DIM

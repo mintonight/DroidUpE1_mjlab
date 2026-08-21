@@ -49,7 +49,7 @@ AMP_OBS_DIM = (
   + AMP_KEY_BODY_ORI_DIM
 )
 # A one-hot conditioning vector is appended internally for AMP training. The
-# four classes are command/style categories and are not actor observations.
-AMP_LABEL_NAMES = ("walk", "run", "turn", "side")
+# five classes are command/style categories and are not actor observations.
+AMP_LABEL_NAMES = ("walk", "run", "turn", "side", "stand")
 AMP_LABEL_DIM = len(AMP_LABEL_NAMES)
 AMP_DISCRIMINATOR_STATE_DIM = AMP_OBS_DIM + AMP_LABEL_DIM

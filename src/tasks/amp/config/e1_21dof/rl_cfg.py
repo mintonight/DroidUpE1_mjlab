@@ -35,18 +35,21 @@ class AmpPpoAlgorithmCfg:
     }
   )
   amp_motion_files: tuple[str, ...] = (
-    "dataset/e1_21dof/amp/walk.npz",
+    "dataset/e1_21dof/amp/walk_moving.npz",
     "dataset/e1_21dof/amp/run.npz",
     "dataset/e1_21dof/amp/run_mirror.npz",
     "dataset/e1_21dof/amp/turn_l.npz",
     "dataset/e1_21dof/amp/turn_r.npz",
     "dataset/e1_21dof/amp/side_l.npz",
     "dataset/e1_21dof/amp/side_r.npz",
+    "dataset/e1_21dof/amp/stand.npz",
   )
   amp_motion_velocity_threshold: float = 0.8
-  amp_motion_weights: tuple[float, ...] = (1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
+  amp_motion_weights: tuple[float, ...] = (
+    1.0, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0
+  )
   amp_motion_labels: tuple[str, ...] = (
-    "walk", "run", "run", "turn", "turn", "side", "side"
+    "walk", "run", "run", "turn", "turn", "side", "side", "stand"
   )
   amp_reward_coefficient: float = 0.4
   amp_task_reward_lerp: float = 0.7

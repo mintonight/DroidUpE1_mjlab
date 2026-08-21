@@ -309,13 +309,14 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     ),
     "walk_swing_foot_clearance": RewardTermCfg(
       func=mdp.walk_swing_foot_clearance,
-      weight=0.35,
+      weight=-0.15,
       params={
         "sensor_name": "feet_ground_contact",
         "feet_cfg": feet,
         "contact_height": 0.06,
-        "target_clearance": 0.05,
-        "minimum_air_time": 0.04,
+        "target_clearance": 0.08,
+        "minimum_air_time": 0.16,
+        "maximum_air_time": 0.36,
         "minimum_support_time": 0.04,
         "maximum_forward_speed": 0.8,
         "include_turning": True,
@@ -323,7 +324,7 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     ),
     "walk_air_time_tracking": RewardTermCfg(
       func=mdp.walk_air_time_tracking,
-      weight=2.0,
+      weight=-0.2,
       params={
         "sensor_name": "feet_ground_contact",
         "target_air_time": 0.48,
@@ -335,7 +336,7 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     ),
     "touchdown_foot_velocity": RewardTermCfg(
       func=mdp.touchdown_foot_velocity,
-      weight=-1.0,
+      weight=-0.3,
       params={
         "sensor_name": "feet_ground_contact",
         "feet_cfg": feet,
