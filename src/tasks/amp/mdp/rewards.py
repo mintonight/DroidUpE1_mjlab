@@ -11,6 +11,11 @@ from mjlab.managers.scene_entity_config import SceneEntityCfg
 from mjlab.sensor import ContactSensor
 from mjlab.utils.lab_api.math import quat_apply, quat_apply_inverse
 
+from .commands import (
+  COMMAND_MODE_MIXED,
+  COMMAND_MODE_TURNING,
+)
+
 if TYPE_CHECKING:
   from mjlab.envs import ManagerBasedRlEnv
 
@@ -28,6 +33,32 @@ def moving_mask(
   return (
     torch.linalg.vector_norm(command[:, :2], dim=1) + torch.abs(command[:, 2])
   ) > threshold
+
+
+def _walk_style_mask(
+  env: ManagerBasedRlEnv,
+  command_name: str,
+  minimum_command: float,
+  maximum_forward_speed: float,
+  include_turning: bool,
+) -> torch.Tensor:
+  """Select moving walk-style commands without constraining the run gait."""
+  command = _command(env, command_name)
+  term = env.command_manager.get_term(command_name)
+  command_mode = getattr(term, "command_mode", None)
+  if command_mode is None:
+    raise RuntimeError(
+      "Walk-style foot rewards require UniformVelocityCommand.command_mode."
+    )
+  command_magnitude = torch.linalg.vector_norm(command[:, :2], dim=1) + torch.abs(
+    command[:, 2]
+  )
+  walk = (command_mode == COMMAND_MODE_MIXED) & (
+    command[:, 0] <= maximum_forward_speed
+  )
+  if include_turning:
+    walk = walk | (command_mode == COMMAND_MODE_TURNING)
+  return walk & (command_magnitude > minimum_command)
 
 
 def track_linear_velocity(
@@ -210,6 +241,112 @@ def feet_slide(
     asset.data.body_link_lin_vel_w[:, feet_cfg.body_ids, :2], dim=-1
   )
   return torch.sum(speed * contact.float(), dim=1)
+
+
+def walk_swing_foot_clearance(
+  env: ManagerBasedRlEnv,
+  sensor_name: str,
+  feet_cfg: SceneEntityCfg,
+  contact_height: float,
+  target_clearance: float,
+  minimum_air_time: float = 0.04,
+  minimum_support_time: float = 0.04,
+  command_name: str = "twist",
+  minimum_command: float = 0.1,
+  maximum_forward_speed: float = 0.8,
+  include_turning: bool = True,
+) -> torch.Tensor:
+  """Reward swing feet for reaching a minimum flat-ground clearance."""
+  if target_clearance <= 0.0:
+    raise ValueError("target_clearance must be positive.")
+  asset: Entity = env.scene[feet_cfg.name]
+  sensor: ContactSensor = env.scene[sensor_name]
+  assert sensor.data.current_air_time is not None
+  assert sensor.data.current_contact_time is not None
+  foot_height = asset.data.body_link_pos_w[:, feet_cfg.body_ids, 2]
+  clearance = foot_height - contact_height
+  clearance_progress = torch.clamp(clearance / target_clearance, 0.0, 1.0)
+  swing = sensor.data.current_air_time > minimum_air_time
+  support = torch.flip(sensor.data.current_contact_time, dims=(1,))
+  supported_swing = swing & (support > minimum_support_time)
+  gait_mask = _walk_style_mask(
+    env,
+    command_name,
+    minimum_command,
+    maximum_forward_speed,
+    include_turning,
+  )
+  return (
+    torch.mean(clearance_progress * supported_swing.float(), dim=1)
+    * gait_mask.float()
+  )
+
+
+def walk_air_time_tracking(
+  env: ManagerBasedRlEnv,
+  sensor_name: str,
+  target_air_time: float,
+  std: float,
+  minimum_support_time: float = 0.04,
+  command_name: str = "twist",
+  minimum_command: float = 0.1,
+  maximum_forward_speed: float = 0.8,
+  include_turning: bool = True,
+) -> torch.Tensor:
+  """Reward walk-style feet that land near the expert swing duration."""
+  if std <= 0.0:
+    raise ValueError("std must be positive.")
+  sensor: ContactSensor = env.scene[sensor_name]
+  assert sensor.data.last_air_time is not None
+  assert sensor.data.current_contact_time is not None
+  first_contact = sensor.compute_first_contact(env.step_dt)
+  error = (sensor.data.last_air_time - target_air_time) / std
+  support = torch.flip(sensor.data.current_contact_time, dims=(1,))
+  supported_landing = first_contact & (support > minimum_support_time)
+  landing_reward = torch.exp(-torch.square(error)) * supported_landing.float()
+  gait_mask = _walk_style_mask(
+    env,
+    command_name,
+    minimum_command,
+    maximum_forward_speed,
+    include_turning,
+  )
+  return torch.sum(landing_reward, dim=1) * gait_mask.float()
+
+
+def touchdown_foot_velocity(
+  env: ManagerBasedRlEnv,
+  sensor_name: str,
+  feet_cfg: SceneEntityCfg,
+  velocity_deadband: float,
+  maximum_velocity: float,
+  command_name: str = "twist",
+  minimum_command: float = 0.1,
+  maximum_forward_speed: float = 0.8,
+  include_turning: bool = True,
+) -> torch.Tensor:
+  """Penalize excessive 3D foot speed only at the first contact step."""
+  if maximum_velocity <= velocity_deadband:
+    raise ValueError("maximum_velocity must exceed velocity_deadband.")
+  asset: Entity = env.scene[feet_cfg.name]
+  sensor: ContactSensor = env.scene[sensor_name]
+  first_contact = sensor.compute_first_contact(env.step_dt)
+  speed = torch.linalg.vector_norm(
+    asset.data.body_link_lin_vel_w[:, feet_cfg.body_ids, :], dim=-1
+  )
+  excess = torch.relu(speed - velocity_deadband)
+  excess = torch.clamp(excess, max=maximum_velocity - velocity_deadband)
+  gait_mask = _walk_style_mask(
+    env,
+    command_name,
+    minimum_command,
+    maximum_forward_speed,
+    include_turning,
+  )
+  return (
+    torch.sum(torch.square(excess) * first_contact.float(), dim=1)
+    * gait_mask.float()
+  )
 
 
 def undesired_contacts(

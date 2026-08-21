@@ -307,6 +307,44 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
       weight=-0.25,
       params={"sensor_name": "feet_ground_contact", "feet_cfg": feet},
     ),
+    "walk_swing_foot_clearance": RewardTermCfg(
+      func=mdp.walk_swing_foot_clearance,
+      weight=0.35,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "feet_cfg": feet,
+        "contact_height": 0.06,
+        "target_clearance": 0.05,
+        "minimum_air_time": 0.04,
+        "minimum_support_time": 0.04,
+        "maximum_forward_speed": 0.8,
+        "include_turning": True,
+      },
+    ),
+    "walk_air_time_tracking": RewardTermCfg(
+      func=mdp.walk_air_time_tracking,
+      weight=2.0,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "target_air_time": 0.48,
+        "std": 0.12,
+        "minimum_support_time": 0.04,
+        "maximum_forward_speed": 0.8,
+        "include_turning": True,
+      },
+    ),
+    "touchdown_foot_velocity": RewardTermCfg(
+      func=mdp.touchdown_foot_velocity,
+      weight=-1.0,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "feet_cfg": feet,
+        "velocity_deadband": 0.25,
+        "maximum_velocity": 2.0,
+        "maximum_forward_speed": 0.8,
+        "include_turning": True,
+      },
+    ),
     "feet_crossing": RewardTermCfg(
       func=mdp.feet_crossing,
       weight=-2.0,
@@ -376,7 +414,7 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "lateral_deadband": 0.15,
           },
           {
-            "step": 5_000 * 24,
+            "step": 3_000 * 24,
             "lin_vel_x": (-0.7, 1.1),
             "lin_vel_y": (-0.4, 0.4),
             "ang_vel_z": (-1.2, 1.2),
@@ -386,7 +424,7 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
             "lateral_deadband": 0.15,
           },
           {
-            "step": 10_000 * 24,
+            "step": 6_000 * 24,
             "lin_vel_x": (-0.8, 1.4),
             "lin_vel_y": (-0.5, 0.5),
             "ang_vel_z": (-1.5, 1.5),
