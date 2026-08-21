@@ -66,7 +66,7 @@ class AmpPpoAlgorithmCfg:
 class E121DofWalkAmpRunnerCfg:
   seed: int = 42
   num_steps_per_env: int = 24
-  max_iterations: int = 50_000
+  max_iterations: int = 30_000
   obs_groups: dict[str, tuple[str, ...]] = field(
     default_factory=lambda: {"actor": ("actor",), "critic": ("critic",)}
   )

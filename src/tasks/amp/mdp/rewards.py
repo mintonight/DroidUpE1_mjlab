@@ -12,6 +12,7 @@ from mjlab.sensor import ContactSensor
 from mjlab.utils.lab_api.math import quat_apply, quat_apply_inverse
 
 from .commands import (
+  COMMAND_MODE_LATERAL,
   COMMAND_MODE_MIXED,
   COMMAND_MODE_TURNING,
 )
@@ -356,7 +357,7 @@ def touchdown_foot_velocity(
   )
 
 
-def turn_air_time(
+def turn_lateral_air_time(
   env: ManagerBasedRlEnv,
   sensor_name: str,
   minimum_air_time: float,
@@ -364,7 +365,7 @@ def turn_air_time(
   minimum_support_time: float = 0.04,
   command_name: str = "twist",
 ) -> torch.Tensor:
-  """Reward alternating single-support steps during pure turning commands."""
+  """Reward alternating single-support steps during turn or lateral commands."""
   if full_reward_air_time <= minimum_air_time:
     raise ValueError("full_reward_air_time must exceed minimum_air_time.")
   sensor: ContactSensor = env.scene[sensor_name]
@@ -382,16 +383,19 @@ def turn_air_time(
   ) / (full_reward_air_time - minimum_air_time)
   progress = torch.clamp(progress, min=0.0, max=1.0)
   reward = torch.sum(progress * valid_landing.float(), dim=1)
-  return reward * (command_mode == COMMAND_MODE_TURNING).float()
+  non_forward_mode = (command_mode == COMMAND_MODE_TURNING) | (
+    command_mode == COMMAND_MODE_LATERAL
+  )
+  return reward * non_forward_mode.float()
 
 
-def turn_contact_pattern(
+def turn_lateral_contact_pattern(
   env: ManagerBasedRlEnv,
   sensor_name: str,
   minimum_contact_time: float = 0.02,
   command_name: str = "twist",
 ) -> torch.Tensor:
-  """Reward exactly one supporting foot during pure turning."""
+  """Reward exactly one supporting foot during pure turning or lateral motion."""
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.current_contact_time is not None
   term = env.command_manager.get_term(command_name)
@@ -400,19 +404,23 @@ def turn_contact_pattern(
     raise RuntimeError("Turn contact reward requires command_mode.")
   contact = sensor.data.current_contact_time > minimum_contact_time
   single_support = contact.sum(dim=1) == 1
-  return single_support.float() * (command_mode == COMMAND_MODE_TURNING).float()
+  non_forward_mode = (command_mode == COMMAND_MODE_TURNING) | (
+    command_mode == COMMAND_MODE_LATERAL
+  )
+  return single_support.float() * non_forward_mode.float()
 
 
-def turn_air_time_dense(
+def turn_lateral_air_time_dense(
   env: ManagerBasedRlEnv,
   sensor_name: str,
-  air_time_threshold: float,
+  turn_air_time_threshold: float,
+  lateral_air_time_threshold: float,
   minimum_contact_time: float = 0.02,
   command_name: str = "twist",
 ) -> torch.Tensor:
-  """Continuously reward the swing foot during valid turning single support."""
-  if air_time_threshold <= 0.0:
-    raise ValueError("air_time_threshold must be positive.")
+  """Reward swing-foot air time during valid turn/lateral single support."""
+  if turn_air_time_threshold <= 0.0 or lateral_air_time_threshold <= 0.0:
+    raise ValueError("Air-time thresholds must be positive.")
   sensor: ContactSensor = env.scene[sensor_name]
   assert sensor.data.current_contact_time is not None
   assert sensor.data.current_air_time is not None
@@ -427,10 +435,19 @@ def turn_air_time_dense(
     torch.zeros_like(sensor.data.current_air_time),
     sensor.data.current_air_time,
   )
-  dense_reward = torch.clamp(swing_air_time / air_time_threshold, max=1.0).sum(
-    dim=1
+  threshold = torch.where(
+    command_mode == COMMAND_MODE_TURNING,
+    torch.full_like(swing_air_time[:, 0], turn_air_time_threshold),
+    torch.full_like(swing_air_time[:, 0], lateral_air_time_threshold),
   )
-  valid = single_support & (command_mode == COMMAND_MODE_TURNING)
+  within_target = swing_air_time <= threshold.unsqueeze(1)
+  dense_reward = (
+    (swing_air_time / threshold.unsqueeze(1)) * within_target.float()
+  ).sum(dim=1)
+  non_forward_mode = (command_mode == COMMAND_MODE_TURNING) | (
+    command_mode == COMMAND_MODE_LATERAL
+  )
+  valid = single_support & non_forward_mode
   return dense_reward * valid.float()
 
 

@@ -366,8 +366,8 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         "include_turning": True,
       },
     ),
-    "turn_air_time": RewardTermCfg(
-      func=mdp.turn_air_time,
+    "turn_lateral_air_time": RewardTermCfg(
+      func=mdp.turn_lateral_air_time,
       weight=1.0,
       params={
         "sensor_name": "feet_ground_contact",
@@ -376,20 +376,21 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         "minimum_support_time": 0.20,
       },
     ),
-    "turn_contact_pattern": RewardTermCfg(
-      func=mdp.turn_contact_pattern,
+    "turn_lateral_contact_pattern": RewardTermCfg(
+      func=mdp.turn_lateral_contact_pattern,
       weight=0.25,
       params={
         "sensor_name": "feet_ground_contact",
         "minimum_contact_time": 0.02,
       },
     ),
-    "turn_air_time_dense": RewardTermCfg(
-      func=mdp.turn_air_time_dense,
+    "turn_lateral_air_time_dense": RewardTermCfg(
+      func=mdp.turn_lateral_air_time_dense,
       weight=0.4,
       params={
         "sensor_name": "feet_ground_contact",
-        "air_time_threshold": 0.45,
+        "turn_air_time_threshold": 0.35,
+        "lateral_air_time_threshold": 0.35,
         "minimum_contact_time": 0.02,
       },
     ),
