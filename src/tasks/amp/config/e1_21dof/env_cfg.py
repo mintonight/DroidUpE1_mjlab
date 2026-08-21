@@ -51,6 +51,16 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     joint_names=("left_hip_yaw_joint", "right_hip_yaw_joint"),
     preserve_order=True,
   )
+  shoulder_roll = SceneEntityCfg(
+    "robot",
+    joint_names=("left_shoulder_roll_joint", "right_shoulder_roll_joint"),
+    preserve_order=True,
+  )
+  shoulder_yaw = SceneEntityCfg(
+    "robot",
+    joint_names=("left_shoulder_yaw_joint", "right_shoulder_yaw_joint"),
+    preserve_order=True,
+  )
   hip_roll = SceneEntityCfg(
     "robot",
     joint_names=("left_hip_roll_joint", "right_hip_roll_joint"),
@@ -270,6 +280,16 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
     "stand_waist_yaw": RewardTermCfg(
       func=mdp.zero_command_joint_l2, weight=-2.0, params={"asset_cfg": waist_yaw}
     ),
+    "stand_shoulder_roll": RewardTermCfg(
+      func=mdp.zero_command_joint_l2,
+      weight=-3.0,
+      params={"asset_cfg": shoulder_roll},
+    ),
+    "stand_shoulder_yaw": RewardTermCfg(
+      func=mdp.zero_command_joint_l2,
+      weight=-3.0,
+      params={"asset_cfg": shoulder_yaw},
+    ),
     "stand_feet_heading": RewardTermCfg(
       func=mdp.stand_feet_heading_l2,
       weight=-2.0,
@@ -344,6 +364,33 @@ def e1_21dof_walk_amp_env_cfg(play: bool = False) -> ManagerBasedRlEnvCfg:
         "maximum_velocity": 2.0,
         "maximum_forward_speed": 0.8,
         "include_turning": True,
+      },
+    ),
+    "turn_air_time": RewardTermCfg(
+      func=mdp.turn_air_time,
+      weight=1.0,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "minimum_air_time": 0.35,
+        "full_reward_air_time": 0.52,
+        "minimum_support_time": 0.20,
+      },
+    ),
+    "turn_contact_pattern": RewardTermCfg(
+      func=mdp.turn_contact_pattern,
+      weight=0.25,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "minimum_contact_time": 0.02,
+      },
+    ),
+    "turn_air_time_dense": RewardTermCfg(
+      func=mdp.turn_air_time_dense,
+      weight=0.4,
+      params={
+        "sensor_name": "feet_ground_contact",
+        "air_time_threshold": 0.45,
+        "minimum_contact_time": 0.02,
       },
     ),
     "feet_crossing": RewardTermCfg(
