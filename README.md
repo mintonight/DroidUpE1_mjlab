@@ -2,6 +2,48 @@
 
 <p align="center"><a href="#中文">中文</a> | <a href="#english">English</a></p>
 
+## Demo / 效果展示
+
+### Sim2Sim
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/walk_run.gif" width="100%" alt="Walk and run sim2sim"><br>
+      <b>AMP — Walk &amp; Run / 行走与跑步</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/turn_lateral_back.gif" width="100%" alt="Turning lateral and backward motion sim2sim"><br>
+      <b>AMP — Turn, Lateral &amp; Backward / 转向、横移与后退</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/mj_dance.gif" width="100%" alt="MJ dance sim2sim"><br>
+      <b>Mimic — MJ Dance / MJ 舞蹈</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/victory_dance.gif" width="100%" alt="Victory dance sim2sim"><br>
+      <b>Mimic — Victory Dance / 胜利舞蹈</b>
+    </td>
+  </tr>
+</table>
+
+### Sim2Real
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/walk_run_real.gif" width="100%" alt="AMP walk and run sim2real"><br>
+      <b>AMP — Walk &amp; Run / 行走与跑步</b>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/dance_real.gif" width="100%" alt="Mimic dance sim2real"><br>
+      <b>Mimic — Dance / 舞蹈</b>
+    </td>
+  </tr>
+</table>
+
 <a id="中文"></a>
 
 ## 中文
@@ -14,7 +56,7 @@
 | --- | --- |
 | `Tracking-Flat-E1-21DOF` | E1 21-DOF 动作跟踪 |
 | `Tracking-Flat-E1-21DOF-No-State-Estimation` | 使用重力投影的动作跟踪 |
-| `AMP-Walk-Flat-E1-21DOF` | 速度指令 walk/run AMP |
+| `AMP-Walk-Flat-E1-21DOF` | 速度指令站立、行走、跑步、转向和横移 AMP |
 
 ### 安装
 
@@ -39,7 +81,7 @@ python scripts/train.py AMP-Walk-Flat-E1-21DOF \
   --env.scene.num-envs 4096 --gpu-ids '[0]'
 ```
 
-默认专家数据为 `dataset/e1_21dof/amp/walk.npz`、`run.npz` 和 `run_mirror.npz`。
+默认专家数据位于 `dataset/e1_21dof/amp/`，包含站立、行走、跑步、原地转向和横移数据。
 
 从 checkpoint 继续训练：
 
@@ -106,7 +148,7 @@ Training DroidUp E1 humanoid robot locomotion using MJLab with AMP (Adversarial 
 | --- | --- |
 | `Tracking-Flat-E1-21DOF` | E1 21-DOF motion tracking |
 | `Tracking-Flat-E1-21DOF-No-State-Estimation` | Motion tracking with projected gravity |
-| `AMP-Walk-Flat-E1-21DOF` | Velocity-commanded walk/run AMP |
+| `AMP-Walk-Flat-E1-21DOF` | Velocity-commanded standing, walking, running, turning, and lateral AMP |
 
 ### Installation
 
