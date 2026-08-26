@@ -34,11 +34,11 @@
 <table>
   <tr>
     <td align="center" width="50%">
-      <img src="docs/walk_run_real.gif" width="100%" alt="AMP walk and run sim2real"><br>
+      <img src="docs/run_real.gif" width="100%" alt="AMP walk and run sim2real"><br>
       <b>AMP — Walk &amp; Run / 行走与跑步</b>
     </td>
     <td align="center" width="50%">
-      <img src="docs/dance_real.gif" width="100%" alt="Mimic dance sim2real"><br>
+      <img src="docs/victory_dance_real.gif" width="100%" alt="Mimic dance sim2real"><br>
       <b>Mimic — Dance / 舞蹈</b>
     </td>
   </tr>
