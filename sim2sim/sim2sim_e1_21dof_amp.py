@@ -1,7 +1,7 @@
 """Run the mjlab E1 21-DOF velocity-commanded AMP policy in MuJoCo.
 
 The runner reproduces the 360-D actor observation used by
-``AMP-Walk-Flat-E1-21DOF``:
+``AMP-Walk-Run-E1-21DOF``:
 
   torso angular velocity * 0.2       3
   torso projected gravity            3

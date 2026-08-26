@@ -56,7 +56,7 @@
 | --- | --- |
 | `Tracking-Flat-E1-21DOF` | E1 21-DOF 动作跟踪 |
 | `Tracking-Flat-E1-21DOF-No-State-Estimation` | 使用重力投影的动作跟踪 |
-| `AMP-Walk-Flat-E1-21DOF` | 速度指令站立、行走、跑步、转向和横移 AMP |
+| `AMP-Walk-Run-E1-21DOF` | 速度指令站立、行走、跑步、转向和横移 AMP |
 
 ### 安装
 
@@ -77,7 +77,7 @@ python scripts/list_envs.py
 ### 训练 AMP
 
 ```bash
-python scripts/train.py AMP-Walk-Flat-E1-21DOF \
+python scripts/train.py AMP-Walk-Run-E1-21DOF \
   --env.scene.num-envs 4096 --gpu-ids '[0]'
 ```
 
@@ -86,7 +86,7 @@ python scripts/train.py AMP-Walk-Flat-E1-21DOF \
 从 checkpoint 继续训练：
 
 ```bash
-python scripts/train.py AMP-Walk-Flat-E1-21DOF \
+python scripts/train.py AMP-Walk-Run-E1-21DOF \
   --agent.resume True --agent.load-run 2026-08-18_11-57-11 \
   --agent.load-checkpoint model_6000.pt --agent.max-iterations 50000 \
   --env.scene.num-envs 4096 --gpu-ids '[0]'
@@ -107,7 +107,7 @@ python scripts/play_mimic.py Tracking-Flat-E1-21DOF-No-State-Estimation \
 ### MuJoCo sim2sim
 
 ```bash
-python scripts/play_amp.py AMP-Walk-Flat-E1-21DOF \
+python scripts/play_amp.py AMP-Walk-Run-E1-21DOF \
   --checkpoint-file logs/rsl_rl/e1_21dof_walk_run_amp/<run>/model_6000.pt \
   --lin-vel-x 0.5 --lin-vel-y 0.0 --ang-vel-z 0.0 \
   --num-envs 1 --device cuda:0 --viewer native
@@ -134,6 +134,12 @@ python sim2sim/sim2sim_e1_21dof_mimic.py \
 
 所有数据和策略都使用 `E1_21dof.xml` 的 XML 关节顺序，不使用 Isaac Lab 排列。
 
+### 参考项目
+
+- [TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab.git)
+- [MJLab](https://github.com/mujocolab/mjlab.git)
+- [AMP_mjlab](https://github.com/ccrpRepo/AMP_mjlab.git)
+
 <p align="right"><a href="#english">English</a></p>
 
 <a id="english"></a>
@@ -148,7 +154,7 @@ Training DroidUp E1 humanoid robot locomotion using MJLab with AMP (Adversarial 
 | --- | --- |
 | `Tracking-Flat-E1-21DOF` | E1 21-DOF motion tracking |
 | `Tracking-Flat-E1-21DOF-No-State-Estimation` | Motion tracking with projected gravity |
-| `AMP-Walk-Flat-E1-21DOF` | Velocity-commanded standing, walking, running, turning, and lateral AMP |
+| `AMP-Walk-Run-E1-21DOF` | Velocity-commanded standing, walking, running, turning, and lateral AMP |
 
 ### Installation
 
@@ -163,10 +169,10 @@ After activation, commands can be run directly with Python. Training uses Tensor
 ### Training, play, and sim2sim
 
 ```bash
-python scripts/train.py AMP-Walk-Flat-E1-21DOF \
+python scripts/train.py AMP-Walk-Run-E1-21DOF \
   --env.scene.num-envs 4096 --gpu-ids '[0]'
 
-python scripts/play_amp.py AMP-Walk-Flat-E1-21DOF \
+python scripts/play_amp.py AMP-Walk-Run-E1-21DOF \
   --checkpoint-file logs/rsl_rl/e1_21dof_walk_run_amp/<run>/model_6000.pt \
   --lin-vel-x 0.5 --lin-vel-y 0.0 --ang-vel-z 0.0 \
   --num-envs 1 --device cuda:0 --viewer native
@@ -198,5 +204,11 @@ Keyboard input is read from the launching terminal rather than the MuJoCo viewer
 - `dataset/e1_21dof/`: E1 AMP/Mimic datasets
 - `scripts/`: training and play entry points
 - `sim2sim/`: MuJoCo ONNX runners
+
+### References
+
+- [TienKung-Lab](https://github.com/Open-X-Humanoid/TienKung-Lab.git)
+- [MJLab](https://github.com/mujocolab/mjlab.git)
+- [AMP_mjlab](https://github.com/ccrpRepo/AMP_mjlab.git)
 
 <p align="right"><a href="#中文">中文</a></p>
