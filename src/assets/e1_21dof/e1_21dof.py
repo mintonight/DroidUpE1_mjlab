@@ -1,4 +1,4 @@
-"""mjlab configuration for the E1 21-DOF humanoid."""
+"""mjlab configuration for the E1 V3 21-DOF humanoid."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -10,8 +10,8 @@ from mjlab.entity import EntityArticulationInfoCfg, EntityCfg
 from mjlab.utils.spec_config import CollisionCfg
 
 
-E1_21DOF_XML = Path(__file__).resolve().parent / "mjcf" / "E1_21dof.xml"
-assert E1_21DOF_XML.exists()
+E1_V3_21DOF_XML = Path(__file__).resolve().parent / "mjcf" / "E1_21dof.xml"
+assert E1_V3_21DOF_XML.exists()
 
 
 def get_spec() -> mujoco.MjSpec:
@@ -23,7 +23,7 @@ def get_spec() -> mujoco.MjSpec:
   position actuators below, therefore those standalone elements are removed
   from this fresh spec before it is attached to the scene.
   """
-  spec = mujoco.MjSpec.from_file(str(E1_21DOF_XML))
+  spec = mujoco.MjSpec.from_file(str(E1_V3_21DOF_XML))
 
   for pair in list(spec.pairs):
     spec.delete(pair)
@@ -44,8 +44,8 @@ def get_spec() -> mujoco.MjSpec:
 # Motor limits copied from the Isaac Lab E1 definition.
 E1_HIP_PITCH_EFFORT = 120.0
 E1_HIP_PITCH_VELOCITY = 12.04
-E1_HIP_ROLL_EFFORT = 60.0
-E1_HIP_ROLL_VELOCITY = 13.09
+E1_HIP_ROLL_EFFORT = 120.0
+E1_HIP_ROLL_VELOCITY = 12.04
 E1_HIP_YAW_EFFORT = 36.0
 E1_HIP_YAW_VELOCITY = 13.61
 E1_KNEE_EFFORT = 120.0
@@ -158,10 +158,10 @@ E1_21DOF_FOOT_COLLISION = CollisionCfg(
 )
 
 
-def get_e1_21dof_robot_cfg(
+def get_e1_v3_21dof_robot_cfg(
   action_delay_range: tuple[int, int] = (0, 0),
 ) -> EntityCfg:
-  """Return a fresh mjlab entity configuration for E1 21-DOF."""
+  """Return a fresh mjlab entity configuration for E1 V3 21-DOF."""
   delay_min_lag, delay_max_lag = action_delay_range
   if delay_min_lag < 0 or delay_max_lag < delay_min_lag:
     raise ValueError(f"Invalid action_delay_range={action_delay_range}")
@@ -191,10 +191,13 @@ for actuator in E1_21DOF_ARTICULATION.actuators:
     )
 
 
+get_e1_21dof_robot_cfg = get_e1_v3_21dof_robot_cfg
+
+
 if __name__ == "__main__":
   import mujoco.viewer as viewer
 
   from mjlab.entity import Entity
 
-  robot = Entity(get_e1_21dof_robot_cfg())
+  robot = Entity(get_e1_v3_21dof_robot_cfg())
   viewer.launch(robot.spec.compile())

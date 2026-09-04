@@ -227,13 +227,29 @@ class E1NoStateSim2Sim:
       np.abs(self.torque_ranges[:, 0]), np.abs(self.torque_ranges[:, 1])
     ).astype(np.float32)
 
-    # The exporter prints three decimals. Reconstruct the exact training scale
-    # from action_scale = 0.25 * effort_limit / stiffness and cross-check it.
-    self.action_scale = 0.25 * effort_limits / self.stiffness
-    if not np.allclose(self.action_scale, metadata_action_scale, atol=6e-4, rtol=0.0):
-      raise ValueError(
-        "Action scale reconstructed from MJCF torque limits disagrees with ONNX metadata"
+    # The policy's action scale is part of its training contract. A newer
+    # MJCF may legitimately have different torque limits (for example, the
+    # V3 hip-roll upgrade from 60 to 120 Nm), so do not reject an older
+    # bundled-motion policy merely because the robot model changed. Keep the
+    # policy metadata scale for target-position reconstruction; the current
+    # MJCF torque ranges still provide the final safety clamp below.
+    reconstructed_action_scale = 0.25 * effort_limits / self.stiffness
+    if not np.allclose(
+      reconstructed_action_scale, metadata_action_scale, atol=6e-4, rtol=0.0
+    ):
+      mismatched = np.flatnonzero(
+        ~np.isclose(
+          reconstructed_action_scale,
+          metadata_action_scale,
+          atol=6e-4,
+          rtol=0.0,
+        )
       )
+      print(
+        "[WARN] MJCF torque limits differ from ONNX action_scale; "
+        f"using ONNX training scales for joints {mismatched.tolist()}"
+      )
+    self.action_scale = metadata_action_scale.copy()
 
     self._require_sensor("imu_upvector", 3)
     self._require_sensor("imu_ang_vel", 3)
