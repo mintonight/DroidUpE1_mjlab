@@ -123,6 +123,32 @@ python sim2sim/sim2sim_e1_21dof_mimic.py \
 
 ### 工具和目录
 
+项目主要目录结构如下：
+
+```text
+DroidUpE1_mjlab/
+├── dataset/
+│   ├── e1_21dof/
+│   │   ├── amp/                  # AMP专家动作数据
+│   │   └── mimic/                # Mimic动作数据
+│   └── mocap/                    # BVH动作捕捉数据
+├── src/
+│   ├── assets/e1_21dof/          # E1 XML、URDF和网格
+│   └── tasks/
+│       ├── amp/                  # AMP任务配置与实现
+│       └── mimic/                # Mimic任务配置与实现
+├── scripts/                      # 训练和播放入口
+├── sim2sim/
+│   ├── policy/amp/               # AMP ONNX策略
+│   ├── policy/mimic/             # Mimic ONNX策略
+│   └── sim2sim_*.py              # MuJoCo sim2sim程序
+├── tools/                        # 数据转换和回放工具
+├── docs/                         # 效果展示和文档资源
+├── logs/                         # 训练日志与checkpoint
+├── pyproject.toml
+└── README.md
+```
+
 - `tools/amp/pkl_to_npz.py`：AMP PKL 转 XML 顺序 NPZ
 - `tools/amp/replay_npz.py`：AMP 动作回放
 - `tools/mimic/pkl_to_npz.py`：Mimic PKL 转 NPZ
@@ -195,6 +221,29 @@ python sim2sim/sim2sim_e1_21dof_mimic.py \
 Keyboard input is read from the launching terminal rather than the MuJoCo viewer: `W/S` forward/backward, `A/D` lateral, `J/L` yaw, `R` clear command, and `Q` quit. Both sim2sim runners refresh status on one terminal line; use `--log-interval 1.0` to change the interval.
 
 ### Tools and layout
+
+The main project layout is:
+
+```text
+DroidUpE1_mjlab/
+├── dataset/
+│   ├── e1_21dof/amp/             # AMP expert motions
+│   ├── e1_21dof/mimic/           # Mimic motions
+│   └── mocap/                    # BVH motion-capture data
+├── src/
+│   ├── assets/e1_21dof/           # E1 XML, URDF, and meshes
+│   └── tasks/                    # AMP and Mimic task implementations
+├── scripts/                      # Training and play entry points
+├── sim2sim/
+│   ├── policy/amp/               # AMP ONNX policies
+│   ├── policy/mimic/             # Mimic ONNX policies
+│   └── sim2sim_*.py              # MuJoCo sim2sim runners
+├── tools/                        # Dataset conversion and replay tools
+├── docs/                         # Demo assets and documentation
+├── logs/                         # Training logs and checkpoints
+├── pyproject.toml
+└── README.md
+```
 
 `tools/amp/pkl_to_npz.py` and `tools/mimic/pkl_to_npz.py` convert datasets. The matching `replay_npz.py` scripts replay them in MuJoCo. All datasets and policies use the exact joint order from `E1_21dof.xml`, not an Isaac Lab permutation.
 

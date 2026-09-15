@@ -420,8 +420,8 @@ def e1_21dof_flat_mimic_env_cfg(
   motion_cmd.motion_file = str(
     # DATASET_PATH / "e1_21dof" / "mimic/dance_npz/MJ_dance.npz"
     # DATASET_PATH / "e1_21dof" / "mimic/dance_npz/victory1.npz"
-    # DATASET_PATH / "e1_21dof" / "mimic/dance_npz/victory2.npz"
-    DATASET_PATH / "e1_21dof" / "mimic/backflip/robot_backflip_soma.npz"
+    DATASET_PATH / "e1_21dof" / "mimic/dance_npz/victory2.npz"
+    # DATASET_PATH / "e1_21dof" / "mimic/backflip/robot_backflip_soma.npz"
   )
   motion_cmd.anchor_body_name = "torso_link"
   motion_cmd.body_names = (
