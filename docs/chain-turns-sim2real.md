@@ -6,14 +6,11 @@
 - 参考动作：`dataset/e1_21dof/mimic/chain_turns/DAP_Chain_Turns_00001.npz`
 - MuJoCo 参考实现：`sim2sim/sim2sim_e1_21dof_mimic.py`
 
-ONNX 已内嵌参考动作和关节参数，理论上可以单文件部署。仍建议同时提供
-NPZ，实机程序可直接读取当前帧的参考量，避免为了取得 ONNX 的参考输出而进行
-两次推理。`model_5000.pt` 只用于继续训练，不是实机部署必需文件。
 
 ## 观测修改
 
 旧 Victory 策略的 actor 输入为 111 维。本策略在 `command` 后新增 3 维
-`motion_anchor_ang_vel_b`，输入变为 114 维。策略仍不需要机器人线速度估计。
+`motion_anchor_ang_vel_b`，输入变为 114 维。
 
 | 切片 | 维数 | 内容 | 单位/坐标系 |
 | --- | ---: | --- | --- |
