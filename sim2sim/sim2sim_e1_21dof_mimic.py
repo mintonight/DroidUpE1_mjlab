@@ -4,13 +4,14 @@ This runner is intentionally specific to the actor used by
 ``Tracking-Flat-E1-21DOF-No-State-Estimation``.  Its observation is:
 
   motion command (joint_pos + joint_vel)  42
+  target torso angular velocity             3
   torso IMU projected gravity              3
   torso IMU angular velocity               3
   joint position relative to default      21
   joint velocity                          21
   previous raw policy action              21
                                              ---
-                                             111
+                                             114
 
 The exported mimic ONNX contains the reference motion.  Consequently this
 script does not load a separate NPZ and cannot accidentally use a motion whose
@@ -31,7 +32,6 @@ import numpy as np
 import onnx
 from onnx import numpy_helper
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 DEFAULT_POLICY_PATH = SCRIPT_DIR / "policy" / "policy1.onnx"
@@ -39,7 +39,7 @@ DEFAULT_XML_PATH = (
   PROJECT_ROOT / "src" / "assets" / "e1_21dof" / "mjcf" / "E1_21dof.xml"
 )
 
-EXPECTED_OBSERVATIONS = (
+LEGACY_OBSERVATIONS = (
   "command",
   "projected_gravity",
   "base_ang_vel",
@@ -47,7 +47,11 @@ EXPECTED_OBSERVATIONS = (
   "joint_vel",
   "actions",
 )
-OBSERVATION_SIZE = 111
+EXPECTED_OBSERVATIONS = (
+  "command",
+  "motion_anchor_ang_vel_b",
+  *LEGACY_OBSERVATIONS[1:],
+)
 ACTION_SIZE = 21
 
 
@@ -72,9 +76,7 @@ def _tensor_shape(value_info: onnx.ValueInfoProto) -> tuple[int | None, ...]:
   return tuple(dims)
 
 
-def _initializer_feeding_output(
-  model: onnx.ModelProto, output_name: str
-) -> np.ndarray:
+def _initializer_feeding_output(model: onnx.ModelProto, output_name: str) -> np.ndarray:
   """Return the constant gathered by one of the bundled-motion outputs."""
   initializers = {item.name: item for item in model.graph.initializer}
   for node in model.graph.node:
@@ -84,13 +86,16 @@ def _initializer_feeding_output(
         break
       array = numpy_helper.to_array(initializers[source_name])
       return np.asarray(array, dtype=np.float32)
-  raise ValueError(f"Could not find bundled motion tensor for ONNX output {output_name!r}")
+  raise ValueError(
+    f"Could not find bundled motion tensor for ONNX output {output_name!r}"
+  )
 
 
 class OnnxPolicy:
   """Small inference adapter with an ONNX Runtime fast path and local fallback."""
 
-  def __init__(self, path: Path, model: onnx.ModelProto) -> None:
+  def __init__(self, path: Path, model: onnx.ModelProto, observation_size: int) -> None:
+    self.observation_size = observation_size
     self.backend: str
     self._session: Any
     try:
@@ -110,7 +115,7 @@ class OnnxPolicy:
 
   def __call__(self, observation: np.ndarray, frame: int) -> np.ndarray:
     feeds = {
-      "obs": observation.reshape(1, OBSERVATION_SIZE).astype(np.float32),
+      "obs": observation.reshape(1, self.observation_size).astype(np.float32),
       "time_step": np.asarray([[frame]], dtype=np.float32),
     }
     action = self._session.run(["actions"], feeds)[0]
@@ -161,15 +166,9 @@ class E1NoStateSim2Sim:
       if array.shape != (ACTION_SIZE,):
         raise ValueError(f"ONNX {name} has shape {array.shape}, expected (21,)")
 
-    self.motion_joint_pos = _initializer_feeding_output(
-      self.onnx_model, "joint_pos"
-    )
-    self.motion_joint_vel = _initializer_feeding_output(
-      self.onnx_model, "joint_vel"
-    )
-    self.motion_body_pos_w = _initializer_feeding_output(
-      self.onnx_model, "body_pos_w"
-    )
+    self.motion_joint_pos = _initializer_feeding_output(self.onnx_model, "joint_pos")
+    self.motion_joint_vel = _initializer_feeding_output(self.onnx_model, "joint_vel")
+    self.motion_body_pos_w = _initializer_feeding_output(self.onnx_model, "body_pos_w")
     self.motion_body_quat_w = _initializer_feeding_output(
       self.onnx_model, "body_quat_w"
     )
@@ -187,6 +186,9 @@ class E1NoStateSim2Sim:
       self.root_motion_body_index = self.body_names.index("pelvis")
     except ValueError as exc:
       raise ValueError("ONNX bundled body_names does not contain 'pelvis'") from exc
+    self.anchor_motion_body_index = self.body_names.index(
+      self.metadata["anchor_body_name"]
+    )
 
     self.model = mujoco.MjModel.from_xml_path(str(xml_path))
     self.data = mujoco.MjData(self.model)
@@ -201,17 +203,13 @@ class E1NoStateSim2Sim:
     self.qvel_ids: list[int] = []
     self.actuator_ids: list[int] = []
     for joint_name in self.joint_names:
-      joint_id = mujoco.mj_name2id(
-        self.model, mujoco.mjtObj.mjOBJ_JOINT, joint_name
-      )
+      joint_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_JOINT, joint_name)
       if joint_id < 0:
         raise ValueError(f"MJCF is missing policy joint {joint_name!r}")
       self.qpos_ids.append(int(self.model.jnt_qposadr[joint_id]))
       self.qvel_ids.append(int(self.model.jnt_dofadr[joint_id]))
 
-      matching_actuators = np.flatnonzero(
-        self.model.actuator_trnid[:, 0] == joint_id
-      )
+      matching_actuators = np.flatnonzero(self.model.actuator_trnid[:, 0] == joint_id)
       if matching_actuators.size != 1:
         raise ValueError(
           f"Expected exactly one actuator for {joint_name!r}, "
@@ -253,8 +251,11 @@ class E1NoStateSim2Sim:
 
     self._require_sensor("imu_upvector", 3)
     self._require_sensor("imu_ang_vel", 3)
+    self.anchor_robot_body_id = mujoco.mj_name2id(
+      self.model, mujoco.mjtObj.mjOBJ_BODY, self.metadata["anchor_body_name"]
+    )
 
-    self.policy = OnnxPolicy(policy_path, self.onnx_model)
+    self.policy = OnnxPolicy(policy_path, self.onnx_model, self.observation_size)
     self.decimation = decimation
     self.start_frame = start_frame % self.motion_frames
     self.loop_motion = loop_motion
@@ -271,9 +272,18 @@ class E1NoStateSim2Sim:
   def _validate_onnx_interface(self) -> None:
     inputs = {item.name: _tensor_shape(item) for item in self.onnx_model.graph.input}
     outputs = {item.name: _tensor_shape(item) for item in self.onnx_model.graph.output}
-    if inputs.get("obs") != (1, OBSERVATION_SIZE):
+    observations = _csv_strings(self.metadata, "observation_names")
+    if observations not in (EXPECTED_OBSERVATIONS, LEGACY_OBSERVATIONS):
       raise ValueError(
-        f"This runner requires ONNX input obs=(1,111), got {inputs.get('obs')}"
+        "This runner only supports the E1 no-state projected-gravity policy. "
+        f"Got observations {observations}."
+      )
+    self.observation_names = observations
+    self.observation_size = 114 if observations == EXPECTED_OBSERVATIONS else 111
+    if inputs.get("obs") != (1, self.observation_size):
+      raise ValueError(
+        f"Observation metadata requires obs=(1,{self.observation_size}), "
+        f"got {inputs.get('obs')}"
       )
     if inputs.get("time_step") != (1, 1):
       raise ValueError(
@@ -282,12 +292,6 @@ class E1NoStateSim2Sim:
     if outputs.get("actions") != (1, ACTION_SIZE):
       raise ValueError(
         f"This runner requires actions=(1,21), got {outputs.get('actions')}"
-      )
-    observations = _csv_strings(self.metadata, "observation_names")
-    if observations != EXPECTED_OBSERVATIONS:
-      raise ValueError(
-        "This runner only supports the no-state projected-gravity policy. "
-        f"Expected observations {EXPECTED_OBSERVATIONS}, got {observations}."
       )
     if self.metadata.get("anchor_body_name") != "torso_link":
       raise ValueError(
@@ -397,22 +401,29 @@ class E1NoStateSim2Sim:
     # mjlab's projected_gravity_from_sensor negates the framezaxis up-vector.
     projected_gravity = -self.data.sensor("imu_upvector").data.copy()
     torso_ang_vel = self.data.sensor("imu_ang_vel").data.copy()
+    target_ang_vel = self._quat_rotate_inverse(
+      self.data.xquat[self.anchor_robot_body_id],
+      self.motion_body_ang_vel_w[frame, self.anchor_motion_body_index],
+    )
     joint_pos = self.data.qpos[self.qpos_ids_np].copy()
     joint_vel = self.data.qvel[self.qvel_ids_np].copy()
 
+    terms = {
+      "command": command,
+      "motion_anchor_ang_vel_b": target_ang_vel,
+      "projected_gravity": projected_gravity,
+      "base_ang_vel": torso_ang_vel,
+      "joint_pos": joint_pos - self.default_joint_pos,
+      "joint_vel": joint_vel,
+      "actions": self.previous_action,
+    }
     observation = np.concatenate(
-      (
-        command,
-        projected_gravity,
-        torso_ang_vel,
-        joint_pos - self.default_joint_pos,
-        joint_vel,
-        self.previous_action,
-      )
+      [terms[name] for name in self.observation_names]
     ).astype(np.float32)
-    if observation.shape != (OBSERVATION_SIZE,):
+    if observation.shape != (self.observation_size,):
       raise RuntimeError(
-        f"Constructed observation shape {observation.shape}, expected (111,)"
+        f"Constructed observation shape {observation.shape}, "
+        f"expected ({self.observation_size},)"
       )
     if not np.all(np.isfinite(observation)):
       raise FloatingPointError("Constructed observation contains non-finite values")
@@ -454,9 +465,7 @@ def run(args: argparse.Namespace) -> None:
   )
 
   total_physics_steps = math.ceil(args.duration / runner.model.opt.timestep)
-  torso_id = mujoco.mj_name2id(
-    runner.model, mujoco.mjtObj.mjOBJ_BODY, "torso_link"
-  )
+  torso_id = mujoco.mj_name2id(runner.model, mujoco.mjtObj.mjOBJ_BODY, "torso_link")
   print("[INFO] E1 21-DOF no-state projected-gravity sim2sim")
   print(f"[INFO] Policy: {args.policy.resolve()}")
   print(f"[INFO] MJCF: {args.xml.resolve()}")
@@ -465,7 +474,7 @@ def run(args: argparse.Namespace) -> None:
     f"[INFO] Motion: {runner.motion_frames} frames, "
     f"control_dt={runner.control_dt:.3f}s ({1.0 / runner.control_dt:.1f} Hz)"
   )
-  print(f"[INFO] Observation/action: {OBSERVATION_SIZE}/{ACTION_SIZE}")
+  print(f"[INFO] Observation/action: {runner.observation_size}/{ACTION_SIZE}")
 
   if args.headless:
     viewer_context: Any = contextlib.nullcontext(None)

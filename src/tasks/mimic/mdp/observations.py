@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 import torch
-
 from mjlab.utils.lab_api.math import (
   matrix_from_quat,
+  quat_apply_inverse,
   subtract_frame_transforms,
 )
 
@@ -39,6 +39,11 @@ def motion_anchor_ori_b(env: ManagerBasedRlEnv, command_name: str) -> torch.Tens
   )
   mat = matrix_from_quat(ori)
   return mat[..., :2].reshape(mat.shape[0], -1)
+
+
+def motion_anchor_ang_vel_b(env: ManagerBasedRlEnv, command_name: str) -> torch.Tensor:
+  command = cast(MotionCommand, env.command_manager.get_term(command_name))
+  return quat_apply_inverse(command.robot_anchor_quat_w, command.anchor_ang_vel_w)
 
 
 def robot_body_pos_b(env: ManagerBasedRlEnv, command_name: str) -> torch.Tensor:

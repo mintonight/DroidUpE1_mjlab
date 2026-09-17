@@ -23,6 +23,7 @@ from mjlab.terrains import TerrainEntityCfg
 from mjlab.utils.noise import NoiseModelWithAdditiveBiasCfg
 from mjlab.utils.noise import UniformNoiseCfg as Unoise
 from mjlab.viewer import ViewerConfig
+
 from src import DATASET_PATH
 from src.assets.e1_21dof import E1_21DOF_ACTION_SCALE, get_e1_21dof_robot_cfg
 from src.tasks.mimic import mdp
@@ -51,6 +52,9 @@ def e1_21dof_flat_mimic_env_cfg(
   actor_terms = {
     "command": ObservationTermCfg(
       func=mdp.generated_commands, params={"command_name": "motion"}
+    ),
+    "motion_anchor_ang_vel_b": ObservationTermCfg(
+      func=mdp.motion_anchor_ang_vel_b, params={"command_name": "motion"}
     ),
     "motion_anchor_pos_b": ObservationTermCfg(
       func=mdp.motion_anchor_pos_b,
@@ -109,6 +113,9 @@ def e1_21dof_flat_mimic_env_cfg(
   critic_terms = {
     "command": ObservationTermCfg(
       func=mdp.generated_commands, params={"command_name": "motion"}
+    ),
+    "motion_anchor_ang_vel_b": ObservationTermCfg(
+      func=mdp.motion_anchor_ang_vel_b, params={"command_name": "motion"}
     ),
     "motion_anchor_pos_b": ObservationTermCfg(
       func=mdp.motion_anchor_pos_b, params={"command_name": "motion"}
@@ -296,7 +303,7 @@ def e1_21dof_flat_mimic_env_cfg(
     ),
     "motion_global_root_ori": RewardTermCfg(
       func=mdp.motion_global_anchor_orientation_error_exp,
-      weight=0.5,
+      weight=1.0,
       params={"command_name": "motion", "std": 0.4},
     ),
     "motion_body_pos": RewardTermCfg(
@@ -317,7 +324,11 @@ def e1_21dof_flat_mimic_env_cfg(
     "motion_body_ang_vel": RewardTermCfg(
       func=mdp.motion_global_body_angular_velocity_error_exp,
       weight=1.0,
-      params={"command_name": "motion", "std": 3.14},
+      params={
+        "command_name": "motion",
+        "std": 2.0,
+        "body_names": ("torso_link",),
+      },
     ),
     "action_rate_l2": RewardTermCfg(func=mdp.action_rate_l2, weight=-1e-1),
     "joint_limit": RewardTermCfg(
@@ -395,9 +406,7 @@ def e1_21dof_flat_mimic_env_cfg(
   )
 
   cfg.scene.entities = {
-    "robot": get_e1_21dof_robot_cfg(
-      action_delay_range=(0, 0) if play else (0, 4)
-    )
+    "robot": get_e1_21dof_robot_cfg(action_delay_range=(0, 0) if play else (0, 4))
   }
   cfg.scene.sensors = (
     ContactSensorCfg(

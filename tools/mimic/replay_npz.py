@@ -14,8 +14,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL = REPO_ROOT / "src/assets/e1_21dof/mjcf/E1_21dof.xml"
 
 

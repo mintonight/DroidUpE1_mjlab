@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DroidUp E1 MJLab 项目地图</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f5f7fb, #0d1117);
+      --panel: light-dark(#ffffff, #151b23);
+      --panel-2: light-dark(#f0f4fa, #1c2430);
+      --text: light-dark(#172033, #e6edf3);
+      --muted: light-dark(#5d6879, #9ba7b4);
+      --line: light-dark(#dce2eb, #303946);
+      --blue: light-dark(#1769d2, #62a8ff);
+      --green: light-dark(#16794c, #55d69e);
+      --orange: light-dark(#a45108, #f3a853);
+      --red: light-dark(#b32d36, #ff7b83);
+      --purple: light-dark(#6f42c1, #bd93f9);
+      --code: light-dark(#edf2f8, #0b1016);
+      --shadow: 0 10px 30px light-dark(#1f3b5a12, #00000035);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.65 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+    code {
+      padding: .1em .35em;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--code);
+      font-size: .9em;
+    }
+    pre {
+      margin: 0;
+      padding: 18px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--code);
+      line-height: 1.55;
+    }
+    h1, h2, h3 { line-height: 1.25; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 48px); letter-spacing: -.035em; }
+    h2 { margin: 0 0 18px; font-size: 25px; }
+    h3 { margin: 0 0 9px; font-size: 17px; }
+    p { margin: 0 0 12px; }
+
+    .layout { display: grid; grid-template-columns: 245px minmax(0, 1fr); }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 28px 20px;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      overflow: auto;
+    }
+    aside strong { display: block; margin-bottom: 18px; font-size: 16px; }
+    aside a {
+      display: block;
+      padding: 7px 10px;
+      border-radius: 7px;
+      color: var(--muted);
+    }
+    aside a:hover { background: var(--panel-2); color: var(--text); text-decoration: none; }
+    main { min-width: 0; }
+    .hero {
+      padding: 68px clamp(24px, 6vw, 84px) 54px;
+      color: white;
+      background:
+        radial-gradient(circle at 85% 20%, #59b8ff55, transparent 30%),
+        linear-gradient(125deg, #12243f, #1b4770 60%, #176055);
+    }
+    .hero p { max-width: 780px; margin-top: 18px; color: #d8e8f8; font-size: 17px; }
+    .hero .path { margin-top: 28px; color: #afcbe6; font-family: ui-monospace, monospace; }
+    .content { max-width: 1180px; margin: 0 auto; padding: 42px clamp(20px, 5vw, 64px) 80px; }
+    section { scroll-margin-top: 20px; margin-bottom: 56px; }
+
+    .callout {
+      padding: 16px 18px;
+      border-left: 4px solid var(--blue);
+      border-radius: 8px;
+      background: var(--panel-2);
+    }
+    .callout.warning { border-left-color: var(--orange); }
+    .muted { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+    .card p:last-child { margin-bottom: 0; }
+    .eyebrow {
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 8px;
+      border: 1px solid var(--line);
+      border-radius: 99px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .flow { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 20px; }
+    .flow .node {
+      position: relative;
+      padding: 15px 12px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--blue);
+      border-radius: 9px;
+      background: var(--panel);
+      text-align: center;
+    }
+    .flow .node:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -18px;
+      top: 50%;
+      color: var(--muted);
+      transform: translateY(-50%);
+    }
+    .flow small { display: block; margin-top: 5px; color: var(--muted); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; background: var(--panel); }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--panel-2); font-size: 13px; }
+    tr:last-child td { border-bottom: 0; }
+    td:first-child { white-space: nowrap; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+
+    details {
+      margin-bottom: 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--panel);
+    }
+    summary { cursor: pointer; padding: 13px 16px; font-weight: 700; }
+    details > div { padding: 0 16px 16px; color: var(--muted); }
+    details ul { margin: 7px 0 0; padding-left: 21px; }
+    .file { color: var(--purple); }
+    .folder { color: var(--blue); }
+    .tree-note { color: var(--muted); }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .compare .card:first-child { border-top: 4px solid var(--green); }
+    .compare .card:last-child { border-top: 4px solid var(--purple); }
+    .kv { display: grid; grid-template-columns: 155px 1fr; gap: 8px 14px; }
+    .kv dt { color: var(--muted); }
+    .kv dd { margin: 0; }
+    footer { padding-top: 25px; border-top: 1px solid var(--line); color: var(--muted); }
+
+    @media (max-width: 900px) {
+      .layout { display: block; }
+      aside { position: static; width: auto; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      aside strong { margin-bottom: 8px; }
+      aside nav { display: flex; flex-wrap: wrap; }
+      aside a { padding: 5px 8px; }
+      .flow { grid-template-columns: repeat(3, 1fr); }
+      .flow .node::after { display: none; }
+      .grid.three { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 620px) {
+      .hero { padding-top: 42px; }
+      .grid, .grid.three, .compare, .flow { grid-template-columns: 1fr; }
+      .kv { grid-template-columns: 1fr; gap: 1px; }
+      .kv dd { margin-bottom: 8px; }
+    }
+    @media print {
+      aside { display: none; }
+      .layout { display: block; }
+      .hero { background: none; color: var(--text); padding: 24px 0; }
+      .hero p, .hero .path { color: var(--muted); }
+      .card { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <strong>DroidUp E1 MJLab</strong>
+      <nav aria-label="页面目录">
+        <a href="#overview">一眼看懂</a>
+        <a href="#flow">运行链路</a>
+        <a href="#tree">目录地图</a>
+        <a href="#mimic">Mimic 核心文件</a>
+        <a href="#rewards">奖励函数</a>
+        <a href="#configs">EnvConfig / RLConfig</a>
+        <a href="#amp">AMP 分支</a>
+        <a href="#data">数据、训练与部署</a>
+        <a href="#current">当前 Chain Turns</a>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <h1>项目文件地图</h1>
+        <p>从动作文件到环境、奖励、PPO、checkpoint，再到 ONNX 与 MuJoCo 部署。重点解释你当前使用的 E1 21-DOF Mimic 训练链路。</p>
+        <div class="path">DroidUpE1_mjlab / src / tasks / mimic / …</div>
+      </header>
+
+      <div class="content">
+        <section id="overview">
+          <h2>一眼看懂</h2>
+          <div class="grid three">
+            <article class="card">
+              <div class="eyebrow">Environment</div>
+              <h3>EnvConfig：机器人世界与任务规则</h3>
+              <p>定义观测、动作、动作参考、随机化、奖励、终止条件、MuJoCo 步长和场景。</p>
+              <code>tracking_env_cfg.py</code>
+            </article>
+            <article class="card">
+              <div class="eyebrow">Algorithm</div>
+              <h3>RLConfig：怎么学习</h3>
+              <p>定义 actor/critic 网络、PPO 超参数、训练轮数、保存间隔和日志目录名。</p>
+              <code>rl_cfg.py</code>
+            </article>
+            <article class="card">
+              <div class="eyebrow">MDP</div>
+              <h3>奖励函数：目标怎么算</h3>
+              <p>EnvConfig 决定启用哪些奖励及其权重；<code>mdp/rewards.py</code>实现数学计算。</p>
+            </article>
+          </div>
+          <div class="callout" style="margin-top:16px">
+            <strong>最重要的区别：</strong>
+            Reward 是环境给策略的任务分数；PPO 的 value loss、surrogate loss、entropy loss 是优化器内部指标。奖励函数不放在 RLConfig 里，loss 也不放在 <code>mdp/rewards.py</code> 里。
+          </div>
+        </section>
+
+        <section id="flow">
+          <h2>训练调用链</h2>
+          <div class="flow" aria-label="训练调用流程">
+            <div class="node"><strong>train.py</strong><small>解析 CLI</small></div>
+            <div class="node"><strong>任务注册表</strong><small>按 task_id 查配置</small></div>
+            <div class="node"><strong>EnvConfig</strong><small>创建 MuJoCo 环境</small></div>
+            <div class="node"><strong>RLConfig</strong><small>创建 PPO 网络</small></div>
+            <div class="node"><strong>Runner</strong><small>采样与更新</small></div>
+            <div class="node"><strong>logs/</strong><small>PT / ONNX / TensorBoard</small></div>
+          </div>
+          <div class="callout" style="margin-top:18px">
+            命令中的 <code>Tracking-Flat-E1-21DOF-No-State-Estimation</code> 是 task ID。它在 <code>src/tasks/mimic/config/e1_21dof/__init__.py</code> 注册，并绑定 EnvConfig、RLConfig 和 <code>MimicOnPolicyRunner</code>。
+          </div>
+        </section>
+
+        <section id="tree">
+          <h2>目录地图</h2>
+          <pre><span class="folder">DroidUpE1_mjlab/</span>
+├── <span class="file">pyproject.toml</span>                 <span class="tree-note"># Python 依赖、命令入口、RSL-RL 本地依赖</span>
+├── <span class="folder">src/</span>
+│   ├── <span class="folder">assets/e1_21dof/</span>          <span class="tree-note"># E1 MJCF、网格、执行器和初始姿态</span>
+│   └── <span class="folder">tasks/</span>
+│       ├── <span class="folder">mimic/</span>                <span class="tree-note"># 按参考动作逐帧跟踪（当前任务）</span>
+│       │   ├── <span class="folder">config/e1_21dof/</span>  <span class="tree-note"># EnvConfig、RLConfig、任务注册</span>
+│       │   ├── <span class="folder">mdp/</span>              <span class="tree-note"># command、observation、reward、termination</span>
+│       │   └── <span class="folder">rl/</span>               <span class="tree-note"># runner 与 ONNX 导出</span>
+│       └── <span class="folder">amp/</span>                  <span class="tree-note"># 速度指令 + AMP 风格先验</span>
+├── <span class="folder">scripts/</span>                      <span class="tree-note"># train / play / list_envs 命令入口</span>
+├── <span class="folder">dataset/</span>                      <span class="tree-note"># NPZ/PKL 动作数据</span>
+├── <span class="folder">tools/</span>                        <span class="tree-note"># CSV/PKL 转 NPZ 与动作回放</span>
+├── <span class="folder">sim2sim/</span>                      <span class="tree-note"># ONNX 在原生 MuJoCo 中部署验证</span>
+├── <span class="folder">logs/rsl_rl/</span>                  <span class="tree-note"># checkpoint、ONNX、TensorBoard、配置快照</span>
+├── <span class="folder">rsl_rl/</span>                       <span class="tree-note"># 项目内置的 PPO/RSL-RL 训练库</span>
+└── <span class="folder">docs/</span>                         <span class="tree-note"># 文档、GIF 与本页面</span></pre>
+        </section>
+
+        <section id="mimic">
+          <h2>Mimic 核心文件分别做什么</h2>
+          <details open>
+            <summary><code>src/tasks/mimic/config/e1_21dof/tracking_env_cfg.py</code> — EnvConfig</summary>
+            <div>
+              <ul>
+                <li>组装 actor/critic 观测、21 维关节位置动作和动作参考 command。</li>
+                <li>配置 push、质量/惯量、COM、PD、摩擦、编码器偏差等 domain randomization。</li>
+                <li>列出奖励项、权重、终止条件、场景、传感器、仿真步长和 viewer。</li>
+                <li><code>has_state_estimation=False</code> 会从 actor 删除 anchor position 与 base linear velocity。</li>
+                <li><code>play=True</code> 会关闭噪声、延迟、随机化，并从动作第 0 帧开始。</li>
+              </ul>
+            </div>
+          </details>
+          <details open>
+            <summary><code>src/tasks/mimic/config/e1_21dof/rl_cfg.py</code> — RLConfig</summary>
+            <div>
+              定义 30,000 iterations、24 steps/env、每 500 次保存、actor/critic MLP（512→256→128）及 PPO 的学习率、gamma、lambda、KL、entropy 等参数。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/mdp/commands.py</code> — 动作参考与采样</summary>
+            <div>
+              <code>MotionLoader</code> 读取 NPZ；<code>MotionCommand</code> 按 time step 提供目标关节、身体位置/旋转/速度，处理随机起点、reset、pose 扰动、自适应采样和 ghost model。当前 command 是 21 维目标关节角 + 21 维目标关节速度，共 42 维。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/mdp/observations.py</code> — 自定义观测</summary>
+            <div>
+              计算目标 anchor 在机器人坐标系的位置/朝向，以及机器人各身体相对 anchor 的位置和 6D 朝向表示。通用关节、IMU、last action 观测来自 mjlab 内置 MDP 函数。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/mdp/rewards.py</code> — 奖励公式</summary>
+            <div>
+              实现参考 root/body 与机器人之间的位置、旋转、线速度、角速度指数奖励，以及自碰撞惩罚。是否启用和权重仍由 EnvConfig 决定。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/mdp/terminations.py</code> — 提前终止</summary>
+            <div>
+              当躯干高度、姿态或手脚高度与参考动作相差过大时结束 episode；这比扣分更强，会直接 reset 环境。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/mdp/metrics.py</code> — 只记录、不直接优化</summary>
+            <div>
+              计算 MPKPE、root-relative MPKPE、关节速度误差和末端位置/旋转误差，用于 TensorBoard 诊断。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/rl/runner.py</code> — checkpoint 与 ONNX</summary>
+            <div>
+              扩展标准 RSL-RL runner。保存 <code>model_N.pt</code> 时同步导出 ONNX，并把本次动作的 joint/body 参考张量和部署 metadata 一起打包。
+            </div>
+          </details>
+          <details>
+            <summary><code>src/tasks/mimic/config/e1_21dof/__init__.py</code> — 任务注册</summary>
+            <div>
+              注册有状态和 No-State 两个 task ID，告诉训练脚本该加载哪个 EnvConfig、RLConfig 和 Runner。
+            </div>
+          </details>
+        </section>
+
+        <section id="rewards">
+          <h2>当前 Mimic 奖励函数放在哪里</h2>
+          <p class="muted">下表中的“配置位置”负责权重和参数；“实现函数”负责计算每个环境的 reward tensor。</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>EnvConfig 名称</th><th>权重</th><th>实现函数（mdp/rewards.py）</th><th>作用</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>motion_global_root_pos</code></td><td class="positive">+0.5</td><td><code>motion_global_anchor_position_error_exp</code></td><td>跟踪 torso 的世界坐标位置。</td></tr>
+                <tr><td><code>motion_global_root_ori</code></td><td class="positive">+1.0</td><td><code>motion_global_anchor_orientation_error_exp</code></td><td>跟踪 torso 的世界朝向；转圈是否跟上主要看它。</td></tr>
+                <tr><td><code>motion_body_pos</code></td><td class="positive">+1.0</td><td><code>motion_relative_body_position_error_exp</code></td><td>跟踪各身体相对 root 的位置，关注姿态形状。</td></tr>
+                <tr><td><code>motion_body_ori</code></td><td class="positive">+1.0</td><td><code>motion_relative_body_orientation_error_exp</code></td><td>跟踪各身体相对朝向。</td></tr>
+                <tr><td><code>motion_body_lin_vel</code></td><td class="positive">+1.0</td><td><code>motion_global_body_linear_velocity_error_exp</code></td><td>跟踪身体世界线速度。</td></tr>
+                <tr><td><code>motion_body_ang_vel</code></td><td class="positive">+1.0</td><td><code>motion_global_body_angular_velocity_error_exp</code></td><td>用 std=2.0 专门跟踪 torso 世界角速度，强化转向。</td></tr>
+                <tr><td><code>action_rate_l2</code></td><td class="negative">−0.1</td><td><code>mjlab.mdp.action_rate_l2</code></td><td>抑制相邻动作跳变。</td></tr>
+                <tr><td><code>joint_limit</code></td><td class="negative">−10.0</td><td><code>mjlab.mdp.joint_pos_limits</code></td><td>惩罚接近或越过关节软限位。</td></tr>
+                <tr><td><code>self_collisions</code></td><td class="negative">−10.0</td><td><code>self_collision_cost</code></td><td>惩罚超过 10 N 的自碰撞。</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warning" style="margin-top:16px">
+            <strong>为什么 loss 很低仍可能不会转？</strong>
+            PPO loss 只说明更新稳定、critic 拟合得不错；真正的行为方向由奖励与观测共同决定。若相对身体奖励很容易拿，而目标 yaw 信息不足，策略会收敛到“动作像但不转身”。
+          </div>
+        </section>
+
+        <section id="configs">
+          <h2>EnvConfig 与 RLConfig 对照</h2>
+          <div class="compare">
+            <article class="card">
+              <div class="eyebrow">tracking_env_cfg.py</div>
+              <h3>EnvConfig：学什么、看到什么、控制什么</h3>
+              <dl class="kv">
+                <dt>Simulation</dt><dd>MuJoCo dt = 0.005 s</dd>
+                <dt>Control</dt><dd>decimation = 4 → 50 Hz</dd>
+                <dt>Scene</dt><dd>平地、E1、接触传感器、并行环境数</dd>
+                <dt>Actor obs</dt><dd>No-State 为 114 维，含目标 torso 角速度</dd>
+                <dt>Critic obs</dt><dd>249 维 privileged observations</dd>
+                <dt>Action</dt><dd>21 维关节位置目标</dd>
+                <dt>Command</dt><dd>动作帧目标与采样方式</dd>
+                <dt>Reward</dt><dd>9 个奖励/惩罚项</dd>
+                <dt>Termination</dt><dd>超时、root 高度/姿态、末端高度</dd>
+                <dt>Randomization</dt><dd>推力、质量、COM、PD、摩擦、延迟等</dd>
+              </dl>
+            </article>
+            <article class="card">
+              <div class="eyebrow">rl_cfg.py</div>
+              <h3>RLConfig：用什么算法、网络和训练计划</h3>
+              <dl class="kv">
+                <dt>Algorithm</dt><dd>PPO</dd>
+                <dt>Actor/Critic</dt><dd>MLP 512 → 256 → 128，ELU</dd>
+                <dt>Rollout</dt><dd>每环境 24 steps</dd>
+                <dt>Iterations</dt><dd>30,000</dd>
+                <dt>Epochs / batches</dt><dd>5 / 4</dd>
+                <dt>Learning rate</dt><dd>1e−3，自适应</dd>
+                <dt>Discount</dt><dd>γ = 0.99，λ = 0.95</dd>
+                <dt>Entropy</dt><dd>0.005</dd>
+                <dt>Target KL</dt><dd>0.01</dd>
+                <dt>Checkpoint</dt><dd>每 500 iterations</dd>
+              </dl>
+            </article>
+          </div>
+        </section>
+
+        <section id="amp">
+          <h2>另一条任务线：AMP</h2>
+          <div class="grid">
+            <article class="card">
+              <h3><code>src/tasks/amp/config/e1_21dof/env_cfg.py</code></h3>
+              <p>速度指令 locomotion 的 EnvConfig。奖励更多：线速度、yaw 速度、站立、步态、脚滑、触地、脚间距、能耗、接触等。</p>
+            </article>
+            <article class="card">
+              <h3><code>src/tasks/amp/config/e1_21dof/rl_cfg.py</code></h3>
+              <p>除 PPO 外，还配置 AMP motion files、discriminator、replay buffer、gradient penalty 和镜像增强。</p>
+            </article>
+            <article class="card">
+              <h3><code>src/tasks/amp/mdp/rewards.py</code></h3>
+              <p>实现 AMP 任务奖励。它与 Mimic 的 <code>mdp/rewards.py</code> 完全分开，修改时先确认当前 task ID。</p>
+            </article>
+            <article class="card">
+              <h3><code>src/tasks/amp/rl/</code></h3>
+              <p>包含自定义 <code>AmpPPO</code>、判别器、motion loader、normalizer 与 replay buffer。</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="data">
+          <h2>数据、训练、测试与部署</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>路径</th><th>用途</th><th>什么时候用</th></tr></thead>
+              <tbody>
+                <tr><td><code>dataset/e1_21dof/mimic/</code></td><td>训练所需 NPZ 动作</td><td><code>--env.commands.motion.motion-file</code></td></tr>
+                <tr><td><code>tools/mimic/csv_to_npz.py</code></td><td>MotionStudio G1 CSV → E1 NPZ</td><td>新动作 retargeting 后转换</td></tr>
+                <tr><td><code>tools/mimic/pkl_to_npz.py</code></td><td>E1 PKL → NPZ，并用 FK 生成身体状态</td><td>已有 E1 关节轨迹</td></tr>
+                <tr><td><code>tools/mimic/replay_npz.py</code></td><td>纯运动学回放 NPZ</td><td>训练前检查动作数据</td></tr>
+                <tr><td><code>scripts/train.py</code></td><td>创建环境并启动 RSL-RL</td><td>训练 checkpoint</td></tr>
+                <tr><td><code>scripts/play_mimic.py</code></td><td>在 mjlab 环境加载 PT checkpoint</td><td>检查训练策略</td></tr>
+                <tr><td><code>sim2sim/sim2sim_e1_21dof_mimic.py</code></td><td>原生 MuJoCo 加载 ONNX</td><td>独立 sim-to-sim 部署测试</td></tr>
+                <tr><td><code>logs/rsl_rl/&lt;experiment&gt;/&lt;run&gt;/</code></td><td>PT、ONNX、TensorBoard、env.yaml、agent.yaml</td><td>训练输出与复现</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="current">
+          <h2>你当前 Chain Turns 训练对应到哪里</h2>
+          <div class="grid">
+            <article class="card">
+              <h3>动作输入</h3>
+              <p><code>dataset/e1_21dof/mimic/chain_turns/DAP_Chain_Turns_00001.npz</code></p>
+              <span class="tag">342 frames</span><span class="tag">重采样 50 FPS</span><span class="tag">21 DOF</span>
+            </article>
+            <article class="card">
+              <h3>任务</h3>
+              <p><code>Tracking-Flat-E1-21DOF-No-State-Estimation</code></p>
+              <span class="tag">Actor 114D</span><span class="tag">Critic 249D</span><span class="tag">Action 21D</span>
+            </article>
+            <article class="card">
+              <h3>训练输出</h3>
+              <p><code>logs/rsl_rl/external_e1_21dof_tracking/2026-09-16_17-12-11_chain_turns_yawfix_50hz/</code></p>
+            </article>
+            <article class="card">
+              <h3>本轮修正</h3>
+              <p>动作已从 30 FPS 重采样到控制频率 50 Hz；actor 新增机身坐标系目标角速度，并强化 torso 朝向与角速度奖励。</p>
+            </article>
+          </div>
+        </section>
+
+        <footer>
+          <p>生成自当前工作树。查看真实训练参数时，以每个 run 目录下的 <code>params/env.yaml</code> 和 <code>params/agent.yaml</code> 为准，因为 CLI 覆盖项会记录在那里。</p>
+        </footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

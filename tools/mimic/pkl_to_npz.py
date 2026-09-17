@@ -19,8 +19,7 @@ from typing import Any
 import mujoco
 import numpy as np
 
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MODEL = REPO_ROOT / "src/assets/e1_21dof/mjcf/E1_21dof.xml"
 
 REQUIRED_KEYS = (
@@ -82,6 +81,22 @@ def _normalize_quaternions_xyzw(quaternions: np.ndarray) -> np.ndarray:
   return quaternions.astype(np.float32)
 
 
+def _differentiate_quaternions_xyzw(quaternions: np.ndarray, fps: float) -> np.ndarray:
+  """Return local angular velocity from an orientation trajectory."""
+  velocity = np.zeros((len(quaternions), 3), dtype=np.float32)
+  if len(quaternions) < 2:
+    return velocity
+
+  quaternions_wxyz = quaternions[:, [3, 0, 1, 2]].astype(np.float64)
+  for frame in range(len(quaternions)):
+    before = max(frame - 1, 0)
+    after = min(frame + 1, len(quaternions) - 1)
+    delta = np.empty(3, dtype=np.float64)
+    mujoco.mju_subQuat(delta, quaternions_wxyz[after], quaternions_wxyz[before])
+    velocity[frame] = delta * fps / (after - before)
+  return velocity
+
+
 def _quat_apply_inverse_wxyz(quat: np.ndarray, vector: np.ndarray) -> np.ndarray:
   result = np.empty(3, dtype=np.float64)
   conjugate = quat.astype(np.float64).copy()
@@ -114,13 +129,9 @@ def _model_names(model: mujoco.MjModel) -> tuple[list[str], list[str], list[int]
 
 def convert(input_path: Path, output_path: Path, model_path: Path, fps_override: float | None) -> None:
   input_path = input_path.expanduser().resolve()
-  output_path = output_path.expanduser().resolve()
-  model_path = model_path.expanduser().resolve()
 
   if not input_path.is_file():
     raise FileNotFoundError(input_path)
-  if not model_path.is_file():
-    raise FileNotFoundError(model_path)
 
   # Pickle files can execute code while loading. This tool is intended only
   # for trusted, locally generated motion files.
@@ -131,6 +142,21 @@ def convert(input_path: Path, output_path: Path, model_path: Path, fps_override:
   missing = [key for key in REQUIRED_KEYS if key not in source]
   if missing:
     raise KeyError(f"Missing required PKL fields: {missing}")
+
+  save_motion(source, output_path, model_path, fps_override)
+
+
+def save_motion(
+  source: dict[str, Any],
+  output_path: Path,
+  model_path: Path,
+  fps_override: float | None = None,
+) -> None:
+  """Generate an mjlab motion NPZ from E1 root and joint trajectories."""
+  output_path = output_path.expanduser().resolve()
+  model_path = model_path.expanduser().resolve()
+  if not model_path.is_file():
+    raise FileNotFoundError(model_path)
 
   model = mujoco.MjModel.from_xml_path(str(model_path))
   sim_data = mujoco.MjData(model)
@@ -165,7 +191,7 @@ def convert(input_path: Path, output_path: Path, model_path: Path, fps_override:
   root_ang_vel = (
     _as_float32(source, "root_rot_vel", (3,))
     if "root_rot_vel" in source
-    else np.zeros((frame_count, 3), dtype=np.float32)
+    else _differentiate_quaternions_xyzw(root_rot_xyzw, fps)
   )
   if len(root_lin_vel_w) != frame_count or len(root_ang_vel) != frame_count:
     raise ValueError("Root velocity frame count does not match dof_pos")
