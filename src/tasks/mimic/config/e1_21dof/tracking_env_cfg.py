@@ -53,9 +53,6 @@ def e1_21dof_flat_mimic_env_cfg(
     "command": ObservationTermCfg(
       func=mdp.generated_commands, params={"command_name": "motion"}
     ),
-    "motion_anchor_ang_vel_b": ObservationTermCfg(
-      func=mdp.motion_anchor_ang_vel_b, params={"command_name": "motion"}
-    ),
     "motion_anchor_pos_b": ObservationTermCfg(
       func=mdp.motion_anchor_pos_b,
       params={"command_name": "motion"},
@@ -113,9 +110,6 @@ def e1_21dof_flat_mimic_env_cfg(
   critic_terms = {
     "command": ObservationTermCfg(
       func=mdp.generated_commands, params={"command_name": "motion"}
-    ),
-    "motion_anchor_ang_vel_b": ObservationTermCfg(
-      func=mdp.motion_anchor_ang_vel_b, params={"command_name": "motion"}
     ),
     "motion_anchor_pos_b": ObservationTermCfg(
       func=mdp.motion_anchor_pos_b, params={"command_name": "motion"}

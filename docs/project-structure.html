@@ -388,8 +388,8 @@
                 <dt>Simulation</dt><dd>MuJoCo dt = 0.005 s</dd>
                 <dt>Control</dt><dd>decimation = 4 → 50 Hz</dd>
                 <dt>Scene</dt><dd>平地、E1、接触传感器、并行环境数</dd>
-                <dt>Actor obs</dt><dd>No-State 为 114 维，含目标 torso 角速度</dd>
-                <dt>Critic obs</dt><dd>249 维 privileged observations</dd>
+                <dt>Actor obs</dt><dd>No-State 为 111 维</dd>
+                <dt>Critic obs</dt><dd>246 维 privileged observations</dd>
                 <dt>Action</dt><dd>21 维关节位置目标</dd>
                 <dt>Command</dt><dd>动作帧目标与采样方式</dd>
                 <dt>Reward</dt><dd>9 个奖励/惩罚项</dd>
@@ -468,15 +468,15 @@
             <article class="card">
               <h3>任务</h3>
               <p><code>Tracking-Flat-E1-21DOF-No-State-Estimation</code></p>
-              <span class="tag">Actor 114D</span><span class="tag">Critic 249D</span><span class="tag">Action 21D</span>
+              <span class="tag">Actor 111D</span><span class="tag">Critic 246D</span><span class="tag">Action 21D</span>
             </article>
             <article class="card">
               <h3>训练输出</h3>
-              <p><code>logs/rsl_rl/external_e1_21dof_tracking/2026-09-16_17-12-11_chain_turns_yawfix_50hz/</code></p>
+              <p><code>logs/rsl_rl/external_e1_21dof_tracking/2026-09-17_19-47-07_chain_turns_111d_ablation_5k/model_2000.pt</code></p>
             </article>
             <article class="card">
               <h3>本轮修正</h3>
-              <p>动作已从 30 FPS 重采样到控制频率 50 Hz；actor 新增机身坐标系目标角速度，并强化 torso 朝向与角速度奖励。</p>
+              <p>动作已从 30 FPS 重采样到控制频率 50 Hz，并强化 torso 朝向与角速度奖励；消融实验确认无需新增目标角速度观测。</p>
             </article>
           </div>
         </section>
