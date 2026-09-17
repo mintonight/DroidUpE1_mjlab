@@ -122,6 +122,9 @@ python sim2sim/sim2sim_e1_21dof_mimic.py \
   --policy sim2sim/policy/mimic/chain_turns_yawfix_50hz.onnx
 ```
 
+Chain Turns 的 114 维观测和实机接口见
+[Sim2Real 说明](docs/chain-turns-sim2real.md)。
+
 键盘输入来自启动脚本的终端，不占用 MuJoCo viewer 快捷键。按键：`W/S` 前后，`A/D` 横移，`J/L` yaw，`R` 清零指令，`Q` 退出。两个 sim2sim 的状态日志使用单行刷新；可用 `--log-interval 1.0` 调整刷新间隔。
 
 ### 工具和目录
