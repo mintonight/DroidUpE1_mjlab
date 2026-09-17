@@ -6,13 +6,9 @@
 - 参考动作：`dataset/e1_21dof/mimic/chain_turns/DAP_Chain_Turns_00001.npz`
 - MuJoCo 参考实现：`sim2sim/sim2sim_e1_21dof_mimic.py`
 
-ONNX 已内嵌参考动作和关节参数，可以单文件部署。仍建议同时提供 NPZ，便于
-部署端检查参考轨迹。`model_2000.pt` 只用于继续训练，不是实机部署必需文件。
-
 ## 观测接口
 
-该策略沿用 Victory 动作的 111 维 No-State actor 接口，没有新增目标角速度或
-机器人线速度观测。
+该策略沿用 Victory 动作的 111 维 No-State actor 接口，没有新增目标角速度观测。
 
 | 切片 | 维数 | 内容 | 单位/坐标系 |
 | --- | ---: | --- | --- |
